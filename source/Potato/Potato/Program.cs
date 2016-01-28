@@ -528,7 +528,7 @@ namespace Potato
             Dictionary<string, string> argDict = parseArgs(args);
             String cmd = "\"C:\\Windows\\System32\\cmd.exe\" /K start";
             String ip = null, disable_exhaust = null, disable_spoof = null, disable_defender = null,schedule_task = null,spoof_host = "WPAD";
-            String wpad_exclude_str="potatopotato.com";
+            String wpad_exclude_str="live.sysinternals.com";
             int srvPort = 80;
    
             if (argDict.ContainsKey("ip")) ip = argDict["ip"];
