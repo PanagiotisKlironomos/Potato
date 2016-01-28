@@ -8,3 +8,23 @@ C:\Users\breens\Documents\Visual Studio 2013\Projects\Potato\Potato\bin\Debug\Sh
 C:\Users\breens\Documents\Visual Studio 2013\Projects\Potato\Potato\bin\Debug\SharpCifs.pdb
 C:\Users\breens\documents\visual studio 2013\Projects\Potato\Potato\bin\Debug\NHttp.dll
 C:\Users\breens\documents\visual studio 2013\Projects\Potato\Potato\bin\Debug\NHttp.pdb
+\\vmware-host\Shared Folders\Potato\source\Potato\Potato\bin\Debug\Potato.exe.config
+\\vmware-host\Shared Folders\Potato\source\Potato\Potato\obj\Debug\Potato.exe
+\\vmware-host\Shared Folders\Potato\source\Potato\Potato\obj\Debug\Potato.pdb
+\\vmware-host\Shared Folders\Potato\source\Potato\Potato\bin\Debug\Potato.exe
+\\vmware-host\Shared Folders\Potato\source\Potato\Potato\bin\Debug\Potato.pdb
+\\vmware-host\Shared Folders\Potato\source\Potato\Potato\bin\Debug\NHttp.dll
+\\vmware-host\Shared Folders\Potato\source\Potato\Potato\bin\Debug\SharpCifs.dll
+\\vmware-host\Shared Folders\Potato\source\Potato\Potato\bin\Debug\NHttp.pdb
+\\vmware-host\Shared Folders\Potato\source\Potato\Potato\bin\Debug\SharpCifs.pdb
+\\vmware-host\Shared Folders\Potato\source\Potato\Potato\obj\Debug\Potato.csprojResolveAssemblyReference.cache
+J:\Potato\source\Potato\Potato\bin\Debug\Potato.exe.config
+J:\Potato\source\Potato\Potato\obj\Debug\Potato.exe
+J:\Potato\source\Potato\Potato\obj\Debug\Potato.pdb
+J:\Potato\source\Potato\Potato\bin\Debug\Potato.exe
+J:\Potato\source\Potato\Potato\bin\Debug\Potato.pdb
+J:\Potato\source\Potato\Potato\bin\Debug\NHttp.dll
+J:\Potato\source\Potato\Potato\bin\Debug\SharpCifs.dll
+J:\Potato\source\Potato\Potato\bin\Debug\NHttp.pdb
+J:\Potato\source\Potato\Potato\bin\Debug\SharpCifs.pdb
+J:\Potato\source\Potato\Potato\obj\Debug\Potato.csprojResolveAssemblyReference.cache

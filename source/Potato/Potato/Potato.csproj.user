@@ -4,6 +4,6 @@
     <StartArguments>10.55.0.19</StartArguments>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
-    <StartArguments>-ip 10.55.0.21 -disable_exhaust true</StartArguments>
+    <StartArguments>-ip 192.168.174.207 -disable_exhaust true -disable_defender true</StartArguments>
   </PropertyGroup>
 </Project>
